@@ -23,8 +23,8 @@ public class ResponseFuture {
     private Integer timeoutMS;
     private Integer sequence;
 
-    private volatile boolean sendDone = false;
-    private volatile Throwable cause = null;
+    private boolean sendDone = false;
+    private Throwable cause = null;
 
     public ResponseFuture(Integer sequence, ResponseCallback responseCallback, Integer timeoutMS) {
         super();
