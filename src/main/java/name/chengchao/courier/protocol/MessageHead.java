@@ -49,7 +49,7 @@ public class MessageHead {
 
     @Override
     public String toString() {
-        return "MessageHead [v=" + v + ", s=" + s + ", req=" + req + "]";
+        return "[v=" + v + ", s=" + s + ", req=" + req + "]";
     }
 
 }

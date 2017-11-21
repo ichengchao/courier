@@ -1,5 +1,7 @@
-package name.chengchao.courier;
+package name.chengchao.courier.test;
 
+import name.chengchao.courier.CourierClient;
+import name.chengchao.courier.CourierServer;
 import name.chengchao.courier.protocol.Message;
 import name.chengchao.courier.protocol.MessageHead;
 
@@ -7,7 +9,7 @@ import name.chengchao.courier.protocol.MessageHead;
  * @author charles
  * @date 2017年11月3日
  */
-public class MyTest {
+public class TestAskSync {
 
     public static void main(String[] args) throws Exception {
         CourierServer server = new CourierServer(8888);
@@ -32,14 +34,9 @@ public class MyTest {
         for (int i = 0; i < 100; i++) {
             Thread.sleep(1000);
             MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, ("test" + i).getBytes());
-            client.askAsync(message, "127.0.0.1", 8888, 5000, new ResponseCallback() {
-
-                @Override
-                public void onComplete(ResponseFuture responseFuture) {
-                    System.out.println("client receive:" + responseFuture.getResponse());
-                }
-            });
+            Message message = new Message(head, ("askSync" + i).getBytes());
+            Message response = client.ask(message, "127.0.0.1", 8888, 3000);
+            System.out.println("client receive(sync):" + response);
         }
 
     }

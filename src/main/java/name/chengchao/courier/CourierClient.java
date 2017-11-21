@@ -85,6 +85,7 @@ public class CourierClient extends CourierBase {
     public Message ask(Message message, String ip, int port, int timeoutMS) throws InterruptedException {
         ResponseFuture responseFuture = new ResponseFuture(message.getHead().getS(), null, timeoutMS);
         getCallbackMap().put(message.getHead().getS(), responseFuture);
+        tell(message, ip, port);
         responseFuture.getSyncLockLatch().await(timeoutMS, TimeUnit.MILLISECONDS);
         return responseFuture.getResponse();
     }
@@ -102,8 +103,8 @@ public class CourierClient extends CourierBase {
         protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
             if (!msg.getHead().isReq()) {
                 final ResponseFuture responseFuture = getCallbackMap().get(msg.getHead().getS());
-                responseFuture.responseDone(msg);
                 if (null != responseFuture) {
+                    responseFuture.responseDone(msg);
                     responseFuture.doCallback(commonExecutor, getCallbackMap());
                 }
             }
