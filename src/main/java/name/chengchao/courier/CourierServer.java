@@ -62,9 +62,9 @@ public class CourierServer {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
             System.out.println("server receive:" + msg.toString());
-            MessageHead head = new MessageHead();
-            head.setV("v1");
-            Message message = new Message(head, ("ok").getBytes());
+            MessageHead head = msg.getHead();
+            head.setReq(false);
+            Message message = new Message(head, ("callback").getBytes());
             ctx.channel().writeAndFlush(message);
         }
     }

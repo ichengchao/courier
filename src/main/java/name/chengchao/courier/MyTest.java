@@ -31,10 +31,15 @@ public class MyTest {
 
         for (int i = 0; i < 100; i++) {
             Thread.sleep(1000);
-            MessageHead head = new MessageHead();
-            head.setV("Version1");
+            MessageHead head = MessageHead.buildMessageHead();
             Message message = new Message(head, ("test" + i).getBytes());
-            client.tell(message);
+            client.askAsync(message, "127.0.0.1", 8888, 5000, new ResponseCallback() {
+
+                @Override
+                public void onComplete(ResponseFuture responseFuture) {
+                    System.out.println("client receive:" + responseFuture.getResponse());
+                }
+            });
         }
 
     }

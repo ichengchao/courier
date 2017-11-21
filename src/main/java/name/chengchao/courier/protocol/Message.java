@@ -2,7 +2,7 @@ package name.chengchao.courier.protocol;
 
 /**
  * 
- * 协议的消息结构体
+ * 协议的消息结构体.协议的结构是: [消息总长度(int)|魔法数字(int)|消息头长度(int)|消息头(byte[])|消息体(byte[])]
  * 
  * @author charles
  * @date 2017年11月2日
@@ -25,7 +25,7 @@ public class Message {
 
     @Override
     public String toString() {
-        return head + "[bodySize=" + body.length + "]";
+        return head + "[body=" + new String(body) + "]";
     }
 
     public MessageHead getHead() {
