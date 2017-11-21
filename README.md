@@ -1,2 +1,2 @@
 # courier
-remoting message communication, base netty.
+remoting message communication, base on netty.
