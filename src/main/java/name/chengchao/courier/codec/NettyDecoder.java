@@ -19,7 +19,7 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
 
     public static final Logger logger = LoggerFactory.getLogger(NettyDecoder.class);
 
-    // 最大长度
+    // 最大长度32MB
     public static final int MAX_LENGTH = 32 * 1024 * 1024;
 
     public NettyDecoder() {
