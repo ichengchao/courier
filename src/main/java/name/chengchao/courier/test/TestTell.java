@@ -2,8 +2,6 @@ package name.chengchao.courier.test;
 
 import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.CourierServer;
-import name.chengchao.courier.ResponseCallback;
-import name.chengchao.courier.ResponseFuture;
 import name.chengchao.courier.protocol.Message;
 import name.chengchao.courier.protocol.MessageHead;
 
