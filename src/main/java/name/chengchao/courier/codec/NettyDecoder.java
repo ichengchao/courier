@@ -1,13 +1,13 @@
 package name.chengchao.courier.codec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
-import name.chengchao.courier.utils.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import name.chengchao.courier.utils.RemotingUtils;
 
 /**
  * 基于长度的decoder
@@ -34,21 +34,10 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
             if (null == frame) {
                 return null;
             }
-            int messageLength = frame.readInt();
-            int magicNumber = frame.readInt();
-            if (magicNumber != Message.MAGIC) {
-                throw new RuntimeException("magic not equal!");
-            }
-            int headLength = frame.readInt();
-            byte[] headBytes = new byte[headLength];
-            byte[] body = new byte[messageLength - headLength - 8];
-            frame.readBytes(headBytes);
-            frame.readBytes(body);
-            MessageHead head = JsonUtils.parseObject(headBytes, MessageHead.class);
-            return new Message(head, body);
+            return Message.decode(frame);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            ctx.channel().close();
+            logger.error("decode exception, " + RemotingUtils.parseChannelRemoteAddr(ctx.channel()), e);
+            RemotingUtils.closeChannel(ctx.channel());
         } finally {
             if (null != frame) {
                 frame.release();

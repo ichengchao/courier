@@ -1,13 +1,14 @@
 package name.chengchao.courier.codec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import name.chengchao.courier.protocol.Message;
 import name.chengchao.courier.utils.Assert;
-import name.chengchao.courier.utils.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import name.chengchao.courier.utils.RemotingUtils;
 
 /**
  * @author charles
@@ -21,15 +22,18 @@ public class NettyEncoder extends MessageToByteEncoder<Message> {
     public void encode(ChannelHandlerContext ctx, Message message, ByteBuf out) throws Exception {
         try {
             Assert.notNull(message, "message can not be null!");
-            byte[] headByte = JsonUtils.toByte(message.getHead());
-            out.writeInt(headByte.length + message.getBody().length + 4 + 4);
-            out.writeInt(Message.MAGIC);
-            out.writeInt(headByte.length);
-            out.writeBytes(headByte);
-            out.writeBytes(message.getBody());
+            ByteBuf header = message.encodeHeader();
+            out.writeBytes(header);
+            byte[] body = message.getBody();
+            if (body != null) {
+                out.writeBytes(body);
+            }
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            ctx.channel().close();
+            logger.error("encode exception, " + RemotingUtils.parseChannelRemoteAddr(ctx.channel()), e);
+            if (message != null) {
+                logger.error(message.toString());
+            }
+            RemotingUtils.closeChannel(ctx.channel());
         }
     }
 

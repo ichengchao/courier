@@ -1,13 +1,14 @@
 package name.chengchao.courier;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import name.chengchao.courier.context.ContextHolder;
 import name.chengchao.courier.protocol.Message;
 
 /**
@@ -16,15 +17,14 @@ import name.chengchao.courier.protocol.Message;
  */
 public class ResponseFuture {
 
-    private Message response;
+    private static Logger logger = LoggerFactory.getLogger(ResponseFuture.class);
+
     private CountDownLatch syncLockLatch = new CountDownLatch(1);
     private AtomicBoolean finish = new AtomicBoolean(false);
     private ResponseCallback responseCallback;
+    private Message response;
     private Integer timeoutMS;
     private Integer sequence;
-
-    private boolean sendDone = false;
-    private Throwable cause = null;
 
     public ResponseFuture(Integer sequence, ResponseCallback responseCallback, Integer timeoutMS) {
         super();
@@ -33,79 +33,55 @@ public class ResponseFuture {
         this.sequence = sequence;
     }
 
-    public void responseDone(Message response) {
-        this.response = response;
-        syncLockLatch.countDown();
-    }
-
-    private void doTimeout(ExecutorService executorService, ConcurrentHashMap<Integer, ResponseFuture> callbackMap) {
-        if (callbackMap.get(this.sequence) == null) {
-            return;
-        }
-        cause = new TimeoutException();
-        doCallback(executorService, callbackMap);
-    }
-
-    public void invokeTimeoutCount(ScheduledExecutorService scheduledExecutorService, ExecutorService executorService,
-        ConcurrentHashMap<Integer, ResponseFuture> callbackMap) {
+    // 异步超时
+    public void invokeTimeoutCount() {
         final int tmpSequence = this.sequence;
-        scheduledExecutorService.schedule(new Runnable() {
+        ContextHolder.scheduledExecutorService.schedule(new Runnable() {
 
             @Override
             public void run() {
-                ResponseFuture responseFuture = callbackMap.get(tmpSequence);
+                ResponseFuture responseFuture = ContextHolder.callbackMap.get(tmpSequence);
                 if (null != responseFuture) {
-                    responseFuture.doTimeout(executorService, callbackMap);
+                    doCallback(false, null, new TimeoutException());
                 }
-                // System.out.println(new Date() + "____" + sequence);
             }
         }, timeoutMS, TimeUnit.MILLISECONDS);
     }
 
-    public void doCallback(ExecutorService executorService, ConcurrentHashMap<Integer, ResponseFuture> callbackMap) {
-        final ResponseFuture myThis = this;
+    // 接收response消息
+    public void receiveResponse(Message response) {
+        this.response = response;
+        doCallback(true, response, null);
+        // 激活同步等待
+        this.syncLockLatch.countDown();
+    }
+
+    // 获取同步结果
+    public Message getSyncResult() {
+        try {
+            syncLockLatch.await(timeoutMS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return this.response;
+    }
+
+    public void doCallback(boolean success, Message response, Throwable cause) {
+        // 防止重复结束
         boolean getLock = finish.compareAndSet(false, true);
         if (!getLock) {
             return;
         }
-        callbackMap.remove(this.sequence);
+        ContextHolder.callbackMap.remove(this.sequence);
         if (null == responseCallback) {
             return;
         }
-        executorService.execute(new Runnable() {
+        ContextHolder.callBackExecutorService.execute(new Runnable() {
             @Override
             public void run() {
-                responseCallback.onComplete(myThis);
+                responseCallback.onComplete(success, response, cause);
             }
         });
-    }
-
-    public Message getResponse() {
-        return response;
-    }
-
-    public void setResponse(Message response) {
-        this.response = response;
-    }
-
-    public Throwable getCause() {
-        return cause;
-    }
-
-    public void setCause(Throwable cause) {
-        this.cause = cause;
-    }
-
-    public void setSendDone(boolean sendDone) {
-        this.sendDone = sendDone;
-    }
-
-    public boolean isSendDone() {
-        return sendDone;
-    }
-
-    public CountDownLatch getSyncLockLatch() {
-        return syncLockLatch;
     }
 
 }

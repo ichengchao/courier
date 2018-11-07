@@ -1,47 +1,44 @@
 package name.chengchao.courier;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import name.chengchao.courier.codec.NettyDecoder;
 import name.chengchao.courier.codec.NettyEncoder;
+import name.chengchao.courier.context.ContextHolder;
+import name.chengchao.courier.handler.MessageHandler;
 import name.chengchao.courier.protocol.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author charles
  * @date 2017年11月3日
  */
-public class CourierClient extends CourierBase {
+public class CourierClient {
     private static final Logger logger = LoggerFactory.getLogger(CourierServer.class);
+
+    private ConcurrentHashMap<String, Channel> channelMap = new ConcurrentHashMap<>();
 
     private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    private ExecutorService commonExecutor;
-    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
+    private final Lock createChannelLock = new ReentrantLock();
 
-    public static final long ConnetTimeout = 3000;
-
-    public CourierClient() {
-        super();
-        System.out.println("client start!!");
-        commonExecutor = Executors.newFixedThreadPool(4);
-    }
+    public CourierClient() {}
 
     public void start() {
         bootstrap.group(workerGroup).channel(NioSocketChannel.class);
@@ -50,11 +47,55 @@ public class CourierClient extends CourierBase {
             public void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(new NettyDecoder());
                 ch.pipeline().addLast(new NettyEncoder());
-                ch.pipeline().addLast(new NettyClientHandler());
+                ch.pipeline().addLast(new IdleStateHandler(0, 0, ContextHolder.IDLE_TIMEOUT_SECONDS));
+                ch.pipeline().addLast(new MessageHandler());
             }
         });
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
         bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+    }
+
+    private Channel getOrCreateChannelFuture(String ip, int port) {
+        String channelKey = ip + ":" + port;
+        Channel channel = channelMap.get(channelKey);
+        if (channel != null && channel.isActive()) {
+            return channel;
+        }
+        if (channel == null) {
+            try {
+                if (this.createChannelLock.tryLock(ContextHolder.LOCK_CREATE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                    try {
+
+                        channel = channelMap.get(channelKey);
+                        if (channel != null && channel.isActive()) {
+                            return channel;
+                        }
+
+                        ChannelFuture channelFuture = bootstrap.connect(ip, port);
+                        if (channelFuture.awaitUninterruptibly(ContextHolder.CONNECT_TIMEOUT_MILLIS)) {
+                            channel = channelFuture.channel();
+                            if (null != channel && channel.isActive()) {
+                                channelMap.put(channelKey, channel);
+                                return channel;
+                            } else {
+                                logger.error(channelFuture.cause().getMessage());
+                            }
+                        }
+
+                    } finally {
+                        this.createChannelLock.unlock();
+                    }
+                } else {
+                    logger.error("createChannel: try to lock channelMap, but timeout, {}ms",
+                        ContextHolder.LOCK_CREATE_TIMEOUT_MILLIS);
+                }
+
+            } catch (Exception e) {
+                logger.error("createChannel: create channel exception", e);
+            }
+        }
+        throw new RuntimeException("can not connect to ip:" + ip + ":" + port);
+
     }
 
     public void tell(Message message, String ip, int port) {
@@ -64,51 +105,18 @@ public class CourierClient extends CourierBase {
         }
     }
 
-    private Channel getOrCreateChannelFuture(String ip, int port) {
-        String channelKey = ip + ":" + port;
-        Channel channel = getChannelMap().get(channelKey);
-        if (channel == null) {
-            ChannelFuture channelFuture = bootstrap.connect(ip, port);
-            if (channelFuture.awaitUninterruptibly(ConnetTimeout)) {
-                channel = channelFuture.channel();
-                if (null != channel && channel.isActive()) {
-                    getChannelMap().put(channelKey, channel);
-                    return channel;
-                } else {
-                    logger.error(channelFuture.cause().getMessage());
-                }
-            }
-        }
-        return channel;
-    }
-
-    public Message ask(Message message, String ip, int port, int timeoutMS) throws InterruptedException {
+    public Message ask(Message message, String ip, int port, int timeoutMS) {
         ResponseFuture responseFuture = new ResponseFuture(message.getHead().getS(), null, timeoutMS);
-        getCallbackMap().put(message.getHead().getS(), responseFuture);
+        ContextHolder.callbackMap.put(message.getHead().getS(), responseFuture);
         tell(message, ip, port);
-        responseFuture.getSyncLockLatch().await(timeoutMS, TimeUnit.MILLISECONDS);
-        return responseFuture.getResponse();
+        return responseFuture.getSyncResult();
     }
 
     public void askAsync(Message message, String ip, int port, int timeoutMS, ResponseCallback responseCallback) {
         ResponseFuture responseFuture = new ResponseFuture(message.getHead().getS(), responseCallback, timeoutMS);
-        getCallbackMap().put(message.getHead().getS(), responseFuture);
+        ContextHolder.callbackMap.put(message.getHead().getS(), responseFuture);
         tell(message, ip, port);
-        responseFuture.invokeTimeoutCount(scheduledExecutorService, commonExecutor, getCallbackMap());
-    }
-
-    class NettyClientHandler extends SimpleChannelInboundHandler<Message> {
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
-            if (!msg.getHead().isReq()) {
-                final ResponseFuture responseFuture = getCallbackMap().get(msg.getHead().getS());
-                if (null != responseFuture) {
-                    responseFuture.responseDone(msg);
-                    responseFuture.doCallback(commonExecutor, getCallbackMap());
-                }
-            }
-        }
+        responseFuture.invokeTimeoutCount();
     }
 
 }

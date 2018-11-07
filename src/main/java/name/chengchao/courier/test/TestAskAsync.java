@@ -3,7 +3,6 @@ package name.chengchao.courier.test;
 import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.CourierServer;
 import name.chengchao.courier.ResponseCallback;
-import name.chengchao.courier.ResponseFuture;
 import name.chengchao.courier.protocol.Message;
 import name.chengchao.courier.protocol.MessageHead;
 
@@ -40,8 +39,8 @@ public class TestAskAsync {
             client.askAsync(message, "127.0.0.1", 8888, 5000, new ResponseCallback() {
 
                 @Override
-                public void onComplete(ResponseFuture responseFuture) {
-                    System.out.println("client receive(Async):" + responseFuture.getResponse());
+                public void onComplete(boolean success, Message response, Throwable cause) {
+                    System.out.println("client receive(Async):" + response);
                 }
             });
         }

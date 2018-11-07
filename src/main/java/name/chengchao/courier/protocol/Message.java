@@ -1,5 +1,9 @@
 package name.chengchao.courier.protocol;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import name.chengchao.courier.utils.JsonUtils;
+
 /**
  * 
  * 协议的消息结构体.协议的结构是: [消息总长度(int)|魔法数字(int)|消息头长度(int)|消息头(byte[])|消息体(byte[])]
@@ -44,8 +48,32 @@ public class Message {
         this.body = body;
     }
 
-    public static void main(String[] args) {
-        System.out.println(MAGIC);
+    // 反序列化
+    public static Message decode(ByteBuf frame) {
+        int messageLength = frame.readInt();
+        int magicNumber = frame.readInt();
+        if (magicNumber != Message.MAGIC) {
+            throw new RuntimeException("magic not equal!");
+        }
+        int headLength = frame.readInt();
+        byte[] headBytes = new byte[headLength];
+        byte[] body = new byte[messageLength - headLength - 8];
+        frame.readBytes(headBytes);
+        frame.readBytes(body);
+        MessageHead head = JsonUtils.parseObject(headBytes, MessageHead.class);
+        return new Message(head, body);
+    }
+
+    // 反序列化
+    public ByteBuf encodeHeader() {
+        byte[] headByte = JsonUtils.toByte(getHead());
+        int length = headByte.length + getBody().length + 4 + 4;
+        ByteBuf byteBuf = Unpooled.buffer(length);
+        byteBuf.writeInt(length);
+        byteBuf.writeInt(Message.MAGIC);
+        byteBuf.writeInt(headByte.length);
+        byteBuf.writeBytes(headByte);
+        return byteBuf;
     }
 
 }

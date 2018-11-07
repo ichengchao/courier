@@ -1,21 +1,21 @@
 package name.chengchao.courier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import name.chengchao.courier.codec.NettyDecoder;
 import name.chengchao.courier.codec.NettyEncoder;
-import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import name.chengchao.courier.context.ContextHolder;
+import name.chengchao.courier.handler.MessageHandler;
 
 /**
  * @author charles
@@ -42,7 +42,8 @@ public class CourierServer {
                 public void initChannel(SocketChannel ch) throws Exception {
                     ch.pipeline().addLast(new NettyDecoder());
                     ch.pipeline().addLast(new NettyEncoder());
-                    ch.pipeline().addLast(new NettyServerHandler());
+                    ch.pipeline().addLast(new IdleStateHandler(0, 0, ContextHolder.IDLE_TIMEOUT_SECONDS));
+                    ch.pipeline().addLast(new MessageHandler());
                 }
             });
             server.option(ChannelOption.SO_BACKLOG, 1024);
@@ -54,18 +55,6 @@ public class CourierServer {
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
-        }
-    }
-
-    class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
-            System.out.println("server receive:" + msg.toString());
-            MessageHead head = msg.getHead();
-            head.setReq(false);
-            Message message = new Message(head, ("callback").getBytes());
-            ctx.channel().writeAndFlush(message);
         }
     }
 }
