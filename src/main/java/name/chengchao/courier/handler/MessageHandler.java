@@ -10,25 +10,32 @@ import io.netty.handler.timeout.IdleStateEvent;
 import name.chengchao.courier.ResponseFuture;
 import name.chengchao.courier.context.ContextHolder;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 import name.chengchao.courier.utils.RemotingUtils;
 
 public class MessageHandler extends SimpleChannelInboundHandler<Message> {
 
     private static Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
+    private CustomMessageHandler customMessageHandler;
+
+    public MessageHandler(CustomMessageHandler customMessageHandler) {
+        this.customMessageHandler = customMessageHandler;
+    }
+
+    public MessageHandler() {}
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
 
         if (msg.getHead().isReq()) {
             // server处理
-            System.out.println("server receive:" + msg.toString());
-            MessageHead head = msg.getHead();
-            head.setReq(false);
-            Message message = new Message(head, ("callback").getBytes());
-            ctx.channel().writeAndFlush(message);
+            if (null != customMessageHandler) {
+                Message response = customMessageHandler.handle(msg);
+                if (null != response) {
+                    ctx.channel().writeAndFlush(response);
+                }
+            }
         } else {
-            System.out.println("client receive:" + msg.toString());
             // client处理
             final ResponseFuture responseFuture = ContextHolder.callbackMap.get(msg.getHead().getS());
             if (null != responseFuture) {

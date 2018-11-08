@@ -17,9 +17,13 @@ public class ContextHolder {
 
     public static final long LOCK_CREATE_TIMEOUT_MILLIS = 5000;
 
+    public static final int CALLBACK_EXECUTOR_THREAD_COUNT = 4;
+
     public static ConcurrentHashMap<Integer, ResponseFuture> callbackMap = new ConcurrentHashMap<>();
 
-    public static ExecutorService callBackExecutorService = Executors.newFixedThreadPool(4);
+    // 回调执行线程池
+    public static ExecutorService callBackExecutorService =
+        Executors.newFixedThreadPool(CALLBACK_EXECUTOR_THREAD_COUNT, new RemotingThreadFactory("remoting-callback-"));
 
     // public static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
 

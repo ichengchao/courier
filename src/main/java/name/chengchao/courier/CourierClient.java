@@ -33,10 +33,10 @@ public class CourierClient {
 
     private ConcurrentHashMap<String, Channel> channelMap = new ConcurrentHashMap<>();
 
+    private ConcurrentHashMap<String, Lock> lockMap = new ConcurrentHashMap<>();
+
     private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup workerGroup = new NioEventLoopGroup();
-
-    private final Lock createChannelLock = new ReentrantLock();
 
     public CourierClient() {}
 
@@ -55,20 +55,29 @@ public class CourierClient {
         bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     }
 
+    synchronized Lock getLock(String target) {
+        Lock lock = lockMap.get(target);
+        if (null == lock) {
+            lock = new ReentrantLock();
+            lockMap.put(target, lock);
+        }
+        return lock;
+    }
+
     private Channel getOrCreateChannelFuture(String ip, int port) {
         String channelKey = ip + ":" + port;
         Channel channel = channelMap.get(channelKey);
         if (channel != null && channel.isActive()) {
             return channel;
-        }
-        if (channel == null) {
+        } else {
             try {
-                if (this.createChannelLock.tryLock(ContextHolder.LOCK_CREATE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                if (getLock(channelKey).tryLock(ContextHolder.LOCK_CREATE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                     try {
-
                         channel = channelMap.get(channelKey);
                         if (channel != null && channel.isActive()) {
                             return channel;
+                        } else {
+                            channelMap.remove(channelKey);
                         }
 
                         ChannelFuture channelFuture = bootstrap.connect(ip, port);
@@ -83,7 +92,7 @@ public class CourierClient {
                         }
 
                     } finally {
-                        this.createChannelLock.unlock();
+                        getLock(channelKey).unlock();
                     }
                 } else {
                     logger.error("createChannel: try to lock channelMap, but timeout, {}ms",

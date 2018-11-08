@@ -15,6 +15,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import name.chengchao.courier.codec.NettyDecoder;
 import name.chengchao.courier.codec.NettyEncoder;
 import name.chengchao.courier.context.ContextHolder;
+import name.chengchao.courier.handler.CustomMessageHandler;
 import name.chengchao.courier.handler.MessageHandler;
 
 /**
@@ -27,8 +28,15 @@ public class CourierServer {
 
     private int port;
 
+    private CustomMessageHandler customMessageHandler;
+
     public CourierServer(int port) {
         this.port = port;
+    }
+
+    public CourierServer(int port, CustomMessageHandler customMessageHandler) {
+        this.port = port;
+        this.customMessageHandler = customMessageHandler;
     }
 
     public void start() throws Exception {
@@ -43,7 +51,7 @@ public class CourierServer {
                     ch.pipeline().addLast(new NettyDecoder());
                     ch.pipeline().addLast(new NettyEncoder());
                     ch.pipeline().addLast(new IdleStateHandler(0, 0, ContextHolder.IDLE_TIMEOUT_SECONDS));
-                    ch.pipeline().addLast(new MessageHandler());
+                    ch.pipeline().addLast(new MessageHandler(customMessageHandler));
                 }
             });
             server.option(ChannelOption.SO_BACKLOG, 1024);
