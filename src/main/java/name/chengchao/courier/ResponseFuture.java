@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 import name.chengchao.courier.context.ContextHolder;
 import name.chengchao.courier.protocol.Message;
 
@@ -36,14 +38,15 @@ public class ResponseFuture {
     // 异步超时
     public void invokeTimeoutCount() {
         final int tmpSequence = this.sequence;
-        ContextHolder.scheduledExecutorService.schedule(new Runnable() {
+        ContextHolder.timer.newTimeout(new TimerTask() {
 
             @Override
-            public void run() {
+            public void run(Timeout timeout) throws Exception {
                 ResponseFuture responseFuture = ContextHolder.callbackMap.get(tmpSequence);
                 if (null != responseFuture) {
                     doCallback(false, null, new TimeoutException());
                 }
+
             }
         }, timeoutMS, TimeUnit.MILLISECONDS);
     }

@@ -32,7 +32,7 @@ public class TestAskAsync {
         CourierClient client = new CourierClient();
         client.start();
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 5; i++) {
             Thread.sleep(1000);
             MessageHead head = MessageHead.buildMessageHead();
             Message message = new Message(head, ("askAsync" + i).getBytes());
@@ -40,10 +40,16 @@ public class TestAskAsync {
 
                 @Override
                 public void onComplete(boolean success, Message response, Throwable cause) {
-                    System.out.println("client receive(Async):" + response);
+                    if (success) {
+                        System.out.println("client receive(Async):" + response);
+                    } else {
+                        System.err.println("error:" + cause);
+                    }
                 }
             });
         }
+
+        Thread.sleep(100000);
 
     }
 

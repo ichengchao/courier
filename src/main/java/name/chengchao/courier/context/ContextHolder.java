@@ -3,9 +3,11 @@ package name.chengchao.courier.context;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timer;
 import name.chengchao.courier.ResponseFuture;
+import name.chengchao.courier.utils.RemotingThreadFactory;
 
 public class ContextHolder {
 
@@ -19,6 +21,8 @@ public class ContextHolder {
 
     public static ExecutorService callBackExecutorService = Executors.newFixedThreadPool(4);
 
-    public static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
+    // public static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
+
+    public static final Timer timer = new HashedWheelTimer(new RemotingThreadFactory("remoting-timer-"));
 
 }
