@@ -11,7 +11,7 @@ import name.chengchao.courier.protocol.MessageHead;
 public class TestPerfClient {
 
     final static byte[] test = new byte[1000000];
-    
+
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
     public static void main(String[] args) throws Exception {
@@ -29,11 +29,10 @@ public class TestPerfClient {
                 System.out.println(i);
             }
         }
-        
-        
+
         scheduledExecutorService.scheduleAtFixedRate(() -> {
-            System.out.println("success:" + CourierClient.completedCount.get());
-            System.out.println("error:" + CourierClient.completedErrorCount.get());
+            System.out.println("success:" + client.getMsgSuccessCount());
+            System.out.println("error:" + client.getMsgErrorCount());
         }, 2, 2, TimeUnit.SECONDS);
 
     }

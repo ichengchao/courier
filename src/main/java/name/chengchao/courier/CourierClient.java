@@ -31,10 +31,11 @@ import name.chengchao.courier.protocol.Message;
  * @date 2017年11月3日
  */
 public class CourierClient {
-    
-    public static AtomicInteger completedCount = new AtomicInteger(0);
-    public static AtomicInteger completedErrorCount = new AtomicInteger(0);
-    
+
+    private AtomicInteger msgCount = new AtomicInteger(0);
+    private AtomicInteger msgSuccessCount = new AtomicInteger(0);
+    private AtomicInteger msgErrorCount = new AtomicInteger(0);
+
     private static final Logger logger = LoggerFactory.getLogger(CourierServer.class);
 
     private ConcurrentHashMap<String, Channel> channelMap = new ConcurrentHashMap<>();
@@ -116,14 +117,16 @@ public class CourierClient {
     public void tell(Message message, String ip, int port) {
         Channel channel = getOrCreateChannelFuture(ip, port);
         if (null != channel && channel.isActive()) {
+
+            msgCount.incrementAndGet();
             channel.writeAndFlush(message).addListener(new ChannelFutureListener() {
-                
+
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
-                        completedCount.incrementAndGet();
+                        msgSuccessCount.incrementAndGet();
                     } else {
-                        completedErrorCount.incrementAndGet();
+                        msgErrorCount.incrementAndGet();
                     }
                 }
             });
@@ -142,6 +145,18 @@ public class CourierClient {
         ContextHolder.callbackMap.put(message.getHead().getS(), responseFuture);
         tell(message, ip, port);
         responseFuture.invokeTimeoutCount();
+    }
+
+    public int getMsgCount() {
+        return msgCount.get();
+    }
+
+    public int getMsgSuccessCount() {
+        return msgSuccessCount.get();
+    }
+
+    public int getMsgErrorCount() {
+        return msgErrorCount.get();
     }
 
 }
