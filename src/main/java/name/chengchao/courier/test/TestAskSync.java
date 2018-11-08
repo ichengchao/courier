@@ -30,7 +30,7 @@ public class TestAskSync {
         CourierClient client = new CourierClient();
         client.start();
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 3; i++) {
             Thread.sleep(1000);
             MessageHead head = MessageHead.buildMessageHead();
             Message message = new Message(head, ("askSync" + i).getBytes());
@@ -38,6 +38,15 @@ public class TestAskSync {
             Message response = client.ask(message, "127.0.0.1", 8888, 3000);
             System.out.println("client receive(sync):" + response);
         }
+
+        // Thread.sleep(20000);
+        // MessageHead head = MessageHead.buildMessageHead();
+        // Message message = new Message(head, ("askSync").getBytes());
+        // System.out.println("client send(syncssssssssss):" + message);
+        // Message response = client.ask(message, "127.0.0.1", 8888, 3000);
+        //
+        // System.out.println("client receive(sync):" + response);
+        // Thread.sleep(100000);
 
     }
 

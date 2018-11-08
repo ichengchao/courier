@@ -25,8 +25,6 @@ public class ContextHolder {
     public static ExecutorService callBackExecutorService =
         Executors.newFixedThreadPool(CALLBACK_EXECUTOR_THREAD_COUNT, new RemotingThreadFactory("remoting-callback-"));
 
-    // public static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
-
     public static final Timer timer = new HashedWheelTimer(new RemotingThreadFactory("remoting-timer-"));
 
 }
