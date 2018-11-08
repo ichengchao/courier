@@ -2,6 +2,7 @@ package name.chengchao.courier;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -29,6 +31,10 @@ import name.chengchao.courier.protocol.Message;
  * @date 2017年11月3日
  */
 public class CourierClient {
+    
+    public static AtomicInteger completedCount = new AtomicInteger(0);
+    public static AtomicInteger completedErrorCount = new AtomicInteger(0);
+    
     private static final Logger logger = LoggerFactory.getLogger(CourierServer.class);
 
     private ConcurrentHashMap<String, Channel> channelMap = new ConcurrentHashMap<>();
@@ -110,7 +116,17 @@ public class CourierClient {
     public void tell(Message message, String ip, int port) {
         Channel channel = getOrCreateChannelFuture(ip, port);
         if (null != channel && channel.isActive()) {
-            channel.writeAndFlush(message);
+            channel.writeAndFlush(message).addListener(new ChannelFutureListener() {
+                
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        completedCount.incrementAndGet();
+                    } else {
+                        completedErrorCount.incrementAndGet();
+                    }
+                }
+            });
         }
     }
 
