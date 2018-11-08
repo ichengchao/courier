@@ -12,20 +12,7 @@ import name.chengchao.courier.protocol.MessageHead;
 public class TestTell {
 
     public static void main(String[] args) throws Exception {
-        CourierServer server = new CourierServer(8888);
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    server.start();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }).start();;
-
+        new CourierServer(8888).serve();
         Thread.sleep(3000);
 
         CourierClient client = new CourierClient();

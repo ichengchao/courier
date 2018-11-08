@@ -13,7 +13,7 @@ import name.chengchao.courier.protocol.MessageHead;
 public class TestAskSync {
 
     public static void main(String[] args) throws Exception {
-        CourierServer server = new CourierServer(8888, new CustomMessageHandler() {
+        new CourierServer(8888, new CustomMessageHandler() {
 
             @Override
             public Message handle(Message request) {
@@ -23,19 +23,7 @@ public class TestAskSync {
 
                 return response;
             }
-        });
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    server.start();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }).start();;
+        }).serve();
 
         Thread.sleep(3000);
 

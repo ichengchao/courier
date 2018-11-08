@@ -39,6 +39,20 @@ public class CourierServer {
         this.customMessageHandler = customMessageHandler;
     }
 
+    public CourierServer serve() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    start();
+                } catch (Exception e) {
+                    logger.error("start courier server with error:", e);
+                }
+            }
+        }, "courier-remoting-server").start();
+        return this;
+    }
+
     public void start() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -65,4 +79,5 @@ public class CourierServer {
             bossGroup.shutdownGracefully();
         }
     }
+
 }
