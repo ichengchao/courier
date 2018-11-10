@@ -15,6 +15,11 @@ import name.chengchao.courier.context.ContextHolder;
 import name.chengchao.courier.protocol.Message;
 
 /**
+ * 异常处理: <br>
+ * <li>超时异常</li>
+ * <li>写异常</li>
+ * 
+ * 
  * @author charles
  * @date 2017年11月21日
  */
