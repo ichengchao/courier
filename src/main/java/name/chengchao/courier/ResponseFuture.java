@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.channel.ChannelFuture;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import name.chengchao.courier.context.ContextHolder;
@@ -27,12 +28,17 @@ public class ResponseFuture {
     private Message response;
     private Integer timeoutMS;
     private Integer sequence;
+    private ChannelFuture sendFuture;
 
     public ResponseFuture(Integer sequence, ResponseCallback responseCallback, Integer timeoutMS) {
         super();
         this.responseCallback = responseCallback;
         this.timeoutMS = timeoutMS;
         this.sequence = sequence;
+    }
+
+    public void setSendFuture(ChannelFuture sendFuture) {
+        this.sendFuture = sendFuture;
     }
 
     // 异步超时
@@ -52,12 +58,12 @@ public class ResponseFuture {
     }
 
     // 接收response消息
-    public void receiveResponse(Message response) {
-        this.response = response;
-        doCallback(true, response, null);
-        // 激活同步等待
-        this.syncLockLatch.countDown();
-    }
+    // public void receiveResponse(Message response) {
+    // this.response = response;
+    // doCallback(true, response, null);
+    // // 激活同步等待
+    // this.syncLockLatch.countDown();
+    // }
 
     // 获取同步结果
     public Message getSyncResult() {
@@ -65,6 +71,10 @@ public class ResponseFuture {
             syncLockLatch.await(timeoutMS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             logger.error(e.getMessage(), e);
+        }
+
+        if (null != sendFuture && !sendFuture.isSuccess()) {
+            throw new RuntimeException(sendFuture.cause());
         }
         return this.response;
     }
@@ -75,6 +85,11 @@ public class ResponseFuture {
         if (!getLock) {
             return;
         }
+
+        this.response = response;
+        // 激活同步等待
+        this.syncLockLatch.countDown();
+
         ContextHolder.callbackMap.remove(this.sequence);
         if (null == responseCallback) {
             return;

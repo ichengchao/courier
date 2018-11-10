@@ -115,12 +115,12 @@ public class CourierClient {
 
     }
 
-    public void tell(Message message, String ip, int port) {
+    private void sendMsg(Message message, String ip, int port, ResponseFuture responseFuture) {
         Channel channel = getOrCreateChannelFuture(ip, port);
         if (null != channel && channel.isActive()) {
 
             msgCount.incrementAndGet();
-            channel.writeAndFlush(message).addListener(new ChannelFutureListener() {
+            ChannelFuture future = channel.writeAndFlush(message).addListener(new ChannelFutureListener() {
 
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
@@ -130,11 +130,22 @@ public class CourierClient {
                         msgErrorCount.incrementAndGet();
                         if (future.cause() != null) {
                             lastCause = future.cause();
+                            if (null != responseFuture) {
+                                responseFuture.doCallback(false, null, future.cause());
+                            }
                         }
                     }
                 }
             });
+
+            if (null != responseFuture) {
+                responseFuture.setSendFuture(future);
+            }
         }
+    }
+
+    public void tell(Message message, String ip, int port) {
+        sendMsg(message, ip, port, null);
     }
 
     public Message ask(Message message, String ip, int port, int timeoutMS) {

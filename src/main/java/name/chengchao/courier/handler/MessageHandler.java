@@ -39,7 +39,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<Message> {
             // client处理
             final ResponseFuture responseFuture = ContextHolder.callbackMap.get(msg.getHead().getS());
             if (null != responseFuture) {
-                responseFuture.receiveResponse(msg);
+                responseFuture.doCallback(true, msg, null);
             }
         }
     }

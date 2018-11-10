@@ -30,7 +30,7 @@ public class TestAskSync {
         CourierClient client = new CourierClient();
         client.start();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 100; i++) {
             Thread.sleep(1000);
             MessageHead head = MessageHead.buildMessageHead();
             Message message = new Message(head, ("askSync" + i).getBytes());
