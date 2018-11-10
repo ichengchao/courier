@@ -57,9 +57,13 @@ public class Message {
         }
         int headLength = frame.readInt();
         byte[] headBytes = new byte[headLength];
-        byte[] body = new byte[messageLength - headLength - 8];
         frame.readBytes(headBytes);
-        frame.readBytes(body);
+        int bodyLength = messageLength - headLength - 8;
+        byte[] body = null;
+        if (bodyLength > 0) {
+            body = new byte[bodyLength];
+            frame.readBytes(body);
+        }
         MessageHead head = JsonUtils.parseObject(headBytes, MessageHead.class);
         return new Message(head, body);
     }
@@ -67,7 +71,10 @@ public class Message {
     // 反序列化
     public ByteBuf encodeHeader() {
         byte[] headByte = JsonUtils.toByte(getHead());
-        int length = headByte.length + getBody().length + 4 + 4;
+        int length = headByte.length + 4 + 4;
+        if (null != getBody()) {
+            length += getBody().length;
+        }
         ByteBuf byteBuf = Unpooled.buffer(length);
         byteBuf.writeInt(length);
         byteBuf.writeInt(Message.MAGIC);

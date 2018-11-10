@@ -1,6 +1,7 @@
 package name.chengchao.courier.test;
 
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -9,9 +10,11 @@ import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.protocol.Message;
 import name.chengchao.courier.protocol.MessageHead;
 
-public class TestPerfClient {
+public class TestPerfClientMultiThread {
 
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+    private static ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public static void main(String[] args) throws Exception {
         Scanner scan = new Scanner(System.in);
@@ -51,13 +54,12 @@ public class TestPerfClient {
             if (sleepMs > 0) {
                 Thread.sleep(sleepMs);
             }
-            MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, body);
-            client.tell(message, ip, 8888);
+            executorService.execute(() -> {
+                MessageHead head = MessageHead.buildMessageHead();
+                Message message = new Message(head, body);
+                client.tell(message, ip, 8888);
+            });
 
-            if (i % 100 == 0) {
-                System.out.println(i);
-            }
         }
 
     }

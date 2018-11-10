@@ -35,6 +35,7 @@ public class CourierClient {
     private AtomicInteger msgCount = new AtomicInteger(0);
     private AtomicInteger msgSuccessCount = new AtomicInteger(0);
     private AtomicInteger msgErrorCount = new AtomicInteger(0);
+    private Throwable lastCause = null;
 
     private static final Logger logger = LoggerFactory.getLogger(CourierServer.class);
 
@@ -127,6 +128,9 @@ public class CourierClient {
                         msgSuccessCount.incrementAndGet();
                     } else {
                         msgErrorCount.incrementAndGet();
+                        if (future.cause() != null) {
+                            lastCause = future.cause();
+                        }
                     }
                 }
             });
@@ -157,6 +161,10 @@ public class CourierClient {
 
     public int getMsgErrorCount() {
         return msgErrorCount.get();
+    }
+
+    public Throwable getLastCause() {
+        return lastCause;
     }
 
 }
