@@ -12,7 +12,7 @@ public class TestPerfClient {
 
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
-    public static void main(String[] args) throws Exception {
+    public static void start() throws Exception {
         Scanner scan = new Scanner(System.in);
         System.out.println("remote ip:");
         String ip = scan.nextLine();

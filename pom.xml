@@ -84,7 +84,7 @@
 							<archive>
 								<manifest>
 									<mainClass>
-										name.chengchao.courier.test.TestPerfClient
+										name.chengchao.courier.test.TestRunner
 									</mainClass>
 								</manifest>
 							</archive>
@@ -95,8 +95,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
-
 		</plugins>
 	</build>
 </project>

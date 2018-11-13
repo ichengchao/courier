@@ -16,7 +16,7 @@ public class TestPerfServer {
     private static AtomicLong trafficCounter = new AtomicLong();
     private static AtomicLong msgCounter = new AtomicLong();
 
-    public static void main(String[] args) throws Exception {
+    public static void start() throws Exception {
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             System.out.println("msgCounter:" + msgCounter.get() + " ,trafficCounter:" + trafficCounter.get());
