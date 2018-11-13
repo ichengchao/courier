@@ -73,7 +73,10 @@ public class ResponseFuture {
     // 获取同步结果
     public Message getSyncResult() {
         try {
-            syncLockLatch.await(timeoutMS, TimeUnit.MILLISECONDS);
+            boolean result = syncLockLatch.await(timeoutMS, TimeUnit.MILLISECONDS);
+            if (!result) {
+                throw new RuntimeException("timeout(ms):" + timeoutMS);
+            }
         } catch (InterruptedException e) {
             logger.error(e.getMessage(), e);
         }

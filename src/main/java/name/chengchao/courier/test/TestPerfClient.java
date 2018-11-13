@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 
 import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 public class TestPerfClient {
 
@@ -51,8 +50,7 @@ public class TestPerfClient {
             if (sleepMs > 0) {
                 Thread.sleep(sleepMs);
             }
-            MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, body);
+            Message message = Message.buildRequestMsg(body);
             client.tell(message, ip, 8888);
 
             if (i % 100 == 0) {

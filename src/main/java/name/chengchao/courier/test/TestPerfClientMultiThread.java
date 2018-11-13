@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 public class TestPerfClientMultiThread {
 
@@ -55,8 +54,7 @@ public class TestPerfClientMultiThread {
                 Thread.sleep(sleepMs);
             }
             executorService.execute(() -> {
-                MessageHead head = MessageHead.buildMessageHead();
-                Message message = new Message(head, body);
+                Message message = Message.buildRequestMsg(body);
                 client.tell(message, ip, 8888);
             });
 

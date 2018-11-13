@@ -2,8 +2,8 @@ package name.chengchao.courier.test;
 
 import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.CourierServer;
+import name.chengchao.courier.handler.CustomMessageHandler;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 /**
  * @author charles
@@ -12,7 +12,14 @@ import name.chengchao.courier.protocol.MessageHead;
 public class TestTell {
 
     public static void main(String[] args) throws Exception {
-        new CourierServer(8888).serve();
+        new CourierServer(8888, new CustomMessageHandler() {
+
+            @Override
+            public Message handle(Message request) {
+                System.out.println("[server]:" + request);
+                return null;
+            }
+        }).serve();
         Thread.sleep(3000);
 
         CourierClient client = new CourierClient();
@@ -20,8 +27,7 @@ public class TestTell {
 
         for (int i = 0; i < 100; i++) {
             Thread.sleep(1000);
-            MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, ("tell" + i).getBytes());
+            Message message = Message.buildRequestMsg(("tell" + i).getBytes());
             client.tell(message, "127.0.0.1", 8888);
         }
 

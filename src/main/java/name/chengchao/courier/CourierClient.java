@@ -149,15 +149,15 @@ public class CourierClient {
     }
 
     public Message ask(Message message, String ip, int port, int timeoutMS) {
-        ResponseFuture responseFuture = new ResponseFuture(message.getHead().getS(), null, timeoutMS);
-        ContextHolder.callbackMap.put(message.getHead().getS(), responseFuture);
+        ResponseFuture responseFuture = new ResponseFuture(message.getSequence(), null, timeoutMS);
+        ContextHolder.callbackMap.put(message.getSequence(), responseFuture);
         tell(message, ip, port);
         return responseFuture.getSyncResult();
     }
 
     public void askAsync(Message message, String ip, int port, int timeoutMS, ResponseCallback responseCallback) {
-        ResponseFuture responseFuture = new ResponseFuture(message.getHead().getS(), responseCallback, timeoutMS);
-        ContextHolder.callbackMap.put(message.getHead().getS(), responseFuture);
+        ResponseFuture responseFuture = new ResponseFuture(message.getSequence(), responseCallback, timeoutMS);
+        ContextHolder.callbackMap.put(message.getSequence(), responseFuture);
         tell(message, ip, port);
         responseFuture.invokeTimeoutCount();
     }

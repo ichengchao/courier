@@ -27,7 +27,9 @@ public class MessageHandler extends SimpleChannelInboundHandler<Message> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
 
-        if (msg.getHead().isReq()) {
+        // System.out.println("====="+msg);
+
+        if (msg.getHead().isRequest()) {
             // server处理
             if (null != customMessageHandler) {
                 Message response = customMessageHandler.handle(msg);
@@ -37,7 +39,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<Message> {
             }
         } else {
             // client处理
-            final ResponseFuture responseFuture = ContextHolder.callbackMap.get(msg.getHead().getS());
+            final ResponseFuture responseFuture = ContextHolder.callbackMap.get(msg.getSequence());
             if (null != responseFuture) {
                 responseFuture.doCallback(true, msg, null);
             }

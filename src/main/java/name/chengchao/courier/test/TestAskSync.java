@@ -4,7 +4,6 @@ import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.CourierServer;
 import name.chengchao.courier.handler.CustomMessageHandler;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 /**
  * @author charles
@@ -17,26 +16,27 @@ public class TestAskSync {
 
             @Override
             public Message handle(Message request) {
-                MessageHead head = request.getHead();
-                head.setReq(false);
-                Message response = new Message(head, ("sync callback").getBytes());
-
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Message response = Message.buildResponseMsg(request.getSequence(), ("sync callback").getBytes());
                 return response;
             }
         }).serve();
 
-        Thread.sleep(3000);
+        Thread.sleep(10000);
 
         CourierClient client = new CourierClient();
         client.start();
 
         for (int i = 0; i < 100; i++) {
-            Thread.sleep(1000);
-            MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, ("askSync" + i).getBytes());
+            Message message = Message.buildRequestMsg(("askSync" + i).getBytes());
             System.out.println("client send(sync):" + message);
             Message response = client.ask(message, "127.0.0.1", 8888, 3000);
             System.out.println("client receive(sync):" + response);
+            Thread.sleep(1000);
         }
 
         // Thread.sleep(20000);

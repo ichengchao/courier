@@ -3,7 +3,6 @@ package name.chengchao.courier.test;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 public class TestSerialize {
 
@@ -31,8 +30,7 @@ public class TestSerialize {
 
     public static void encodePerf() {
 
-        MessageHead head = MessageHead.buildMessageHead();
-        Message message = new Message(head, body_100KB);
+        Message message = Message.buildRequestMsg(body_100KB);
         for (int i = 0; i < 2000000; i++) {
             message.encodeHeader();
             if (i % 10000 == 0) {
@@ -43,9 +41,7 @@ public class TestSerialize {
     }
 
     public static void decodePerf() {
-
-        MessageHead head = MessageHead.buildMessageHead();
-        Message message = new Message(head, body_100KB);
+        Message message = Message.buildRequestMsg(body_100KB);
         ByteBuf headBuf = message.encodeHeader();
         ByteBuf msg = Unpooled.buffer(headBuf.array().length + message.getBody().length);
         msg.writeBytes(headBuf.array());

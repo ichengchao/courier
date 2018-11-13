@@ -5,7 +5,6 @@ import name.chengchao.courier.CourierServer;
 import name.chengchao.courier.ResponseCallback;
 import name.chengchao.courier.handler.CustomMessageHandler;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 /**
  * @author charles
@@ -18,9 +17,7 @@ public class TestAskAsync {
 
             @Override
             public Message handle(Message request) {
-                MessageHead head = request.getHead();
-                head.setReq(false);
-                Message response = new Message(head, ("Async callback").getBytes());
+                Message response = Message.buildResponseMsg(request.getSequence(), ("Async callback").getBytes());
                 return response;
             }
         }).serve();
@@ -32,8 +29,7 @@ public class TestAskAsync {
 
         for (int i = 0; i < 100; i++) {
             Thread.sleep(1000);
-            MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, ("askAsync" + i).getBytes());
+            Message message = Message.buildRequestMsg(("askAsync" + i).getBytes());
             System.out.println("client send(Async):" + message);
             client.askAsync(message, "127.0.0.1", 8888, 5000, new ResponseCallback() {
 

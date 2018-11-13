@@ -9,7 +9,6 @@ import name.chengchao.courier.CourierClient;
 import name.chengchao.courier.CourierServer;
 import name.chengchao.courier.handler.CustomMessageHandler;
 import name.chengchao.courier.protocol.Message;
-import name.chengchao.courier.protocol.MessageHead;
 
 public class TestPerfServer {
 
@@ -38,8 +37,7 @@ public class TestPerfServer {
 
         for (int i = 0; i < 10; i++) {
             Thread.sleep(1000);
-            MessageHead head = MessageHead.buildMessageHead();
-            Message message = new Message(head, ("tell" + i).getBytes());
+            Message message = Message.buildRequestMsg(("tell" + i).getBytes());
             client.tell(message, "127.0.0.1", 8888);
         }
 
