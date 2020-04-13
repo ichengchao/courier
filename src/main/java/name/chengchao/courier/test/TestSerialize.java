@@ -20,7 +20,7 @@ public class TestSerialize {
 
     public static void allocPerf() {
         for (int i = 0; i < 200000; i++) {
-            byte[] headBytes = new byte[1000000];
+            //byte[] headBytes = new byte[1000000];
             // Unpooled.buffer(1000034);
             if (i % 10000 == 0) {
                 System.out.println(i);
